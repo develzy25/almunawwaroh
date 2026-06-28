@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  turbopack: {
+    root: "../../", // Menunjuk ke root folder repository (monorepo root)
+  },
 };
 
 export default nextConfig;
