@@ -1,0 +1,10 @@
+name = "al-munawwaroh-api"
+main = "src/index.ts"
+compatibility_date = "2026-06-28"
+compatibility_flags = [ "nodejs_compat" ]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "al-munawwaroh-db"
+database_id = "4c3ff5c7-f54e-4d93-ab5a-457a1f0b636c"
+migrations_dir = "drizzle"
