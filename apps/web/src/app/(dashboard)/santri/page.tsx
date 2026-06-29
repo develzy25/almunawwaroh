@@ -11,6 +11,20 @@ import { Button } from '@/components/ui/button';
 import { Santri, Kk, Jenjang, SantriDetail, SantriDokumen } from '@/types';
 import { exportToExcel, downloadExcelTemplate, importFromExcel } from '@/lib/excel';
 
+interface SantriFormInput extends Partial<Santri> {
+  nomorKk?: string;
+  namaAyah?: string;
+  namaIbu?: string;
+  namaWali?: string;
+  alamatKk?: string;
+  rt?: string;
+  rw?: string;
+  desa?: string;
+  kecamatan?: string;
+  kabupaten?: string;
+  provinsi?: string;
+}
+
 export default function SantriPage() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<'santri' | 'kk'>('santri');
@@ -23,7 +37,7 @@ export default function SantriPage() {
   const [showKkModal, setShowKkModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [selectedSantriId, setSelectedSantriId] = useState<string | null>(null);
-  const [editingSantri, setEditingSantri] = useState<Partial<Santri> | null>(null);
+  const [editingSantri, setEditingSantri] = useState<SantriFormInput | null>(null);
   const [editingKk, setEditingKk] = useState<Partial<Kk> | null>(null);
 
   // States & Refs untuk Cloudinary Upload
@@ -113,7 +127,7 @@ export default function SantriPage() {
 
   // Mutations
   const saveSantriMutation = useMutation({
-    mutationFn: (data: Partial<Santri>) => {
+    mutationFn: (data: SantriFormInput) => {
       return editingSantri?.id 
         ? api.put(`/api/santri/${editingSantri.id}`, data)
         : api.post('/api/santri', data);
@@ -172,8 +186,70 @@ export default function SantriPage() {
   );
 
   const handleOpenAddSantri = () => {
-    setEditingSantri({});
+    setEditingSantri({
+      nomorKk: '',
+      namaAyah: '',
+      namaIbu: '',
+      namaWali: '',
+      alamatKk: '',
+      rt: '',
+      rw: '',
+      desa: '',
+      kecamatan: '',
+      kabupaten: '',
+      provinsi: '',
+    });
     setShowSantriModal(true);
+  };
+
+  const handleOpenEditSantri = (s: Santri) => {
+    const associatedKk = kkList.find(k => k.id === s.kkId);
+    setEditingSantri({
+      ...s,
+      nomorKk: associatedKk?.nomorKk || '',
+      namaAyah: associatedKk?.namaAyah || '',
+      namaIbu: associatedKk?.namaIbu || '',
+      namaWali: associatedKk?.namaWali || '',
+      alamatKk: associatedKk?.alamat || '',
+      rt: associatedKk?.rt || '',
+      rw: associatedKk?.rw || '',
+      desa: associatedKk?.desa || '',
+      kecamatan: associatedKk?.kecamatan || '',
+      kabupaten: associatedKk?.kabupaten || '',
+      provinsi: associatedKk?.provinsi || '',
+    });
+    setShowSantriModal(true);
+  };
+
+  const updateFormField = (field: keyof SantriFormInput, value: string | boolean | number | null | undefined) => {
+    setEditingSantri(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleNomorKkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setEditingSantri(prev => {
+      const updated = { ...prev, nomorKk: val };
+      const matchingKk = kkList.find(k => k.nomorKk === val);
+      if (matchingKk) {
+        return {
+          ...updated,
+          namaAyah: matchingKk.namaAyah,
+          namaIbu: matchingKk.namaIbu,
+          namaWali: matchingKk.namaWali || '',
+          alamatKk: matchingKk.alamat,
+          rt: matchingKk.rt,
+          rw: matchingKk.rw,
+          desa: matchingKk.desa,
+          kecamatan: matchingKk.kecamatan,
+          kabupaten: matchingKk.kabupaten,
+          provinsi: matchingKk.provinsi,
+        };
+      }
+      return updated;
+    });
   };
 
   const handleOpenAddKk = () => {
@@ -417,7 +493,7 @@ export default function SantriPage() {
                         <td className="p-4 text-right" onClick={e => e.stopPropagation()}>
                           <div className="flex gap-2 justify-end">
                             <button 
-                              onClick={() => { setEditingSantri(s); setShowSantriModal(true); }}
+                              onClick={() => handleOpenEditSantri(s)}
                               className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400 hover:text-slate-600"
                             >
                               <Edit className="w-4 h-4" />
@@ -634,7 +710,7 @@ export default function SantriPage() {
                   ...values,
                   statusAktif: values.statusAktif === 'true',
                 });
-              }} className="space-y-4">
+              }} className="space-y-6">
                 {/* File Upload untuk Foto Profil */}
                 <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400 overflow-hidden shrink-0 shadow-inner">
@@ -652,82 +728,144 @@ export default function SantriPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nama Lengkap</label>
-                    <input type="text" name="nama" defaultValue={editingSantri?.nama || ''} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                <div className="space-y-4">
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider border-b border-slate-100 pb-2">Biodata Santri</h4>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nama Lengkap</label>
+                      <input type="text" name="nama" value={editingSantri?.nama || ''} onChange={e => updateFormField('nama', e.target.value)} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">NIK (16 Digit)</label>
+                      <input type="text" name="nik" value={editingSantri?.nik || ''} onChange={e => updateFormField('nik', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Jenis Kelamin</label>
+                      <select name="jenisKelamin" value={editingSantri?.jenisKelamin || 'L'} onChange={e => updateFormField('jenisKelamin', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="L">Laki-Laki (L)</option>
+                        <option value="P">Perempuan (P)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Program / Jenjang</label>
+                      <select name="jenjangId" value={editingSantri?.jenjangId || ''} onChange={e => updateFormField('jenjangId', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="">Pilih Program</option>
+                        {jenjangList.map(j => (
+                          <option key={j.id} value={j.id}>{j.nama}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tempat Lahir</label>
+                      <input type="text" name="tempatLahir" value={editingSantri?.tempatLahir || ''} onChange={e => updateFormField('tempatLahir', e.target.value)} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Lahir</label>
+                      <input type="date" name="tanggalLahir" value={editingSantri?.tanggalLahir || ''} onChange={e => updateFormField('tanggalLahir', e.target.value)} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sekolah Asal</label>
+                      <input type="text" name="sekolah" value={editingSantri?.sekolah || ''} onChange={e => updateFormField('sekolah', e.target.value)} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Masuk TPQ/RTQ</label>
+                      <input type="date" name="tanggalMasuk" value={editingSantri?.tanggalMasuk || ''} onChange={e => updateFormField('tanggalMasuk', e.target.value)} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status Syahriah (SPP)</label>
+                      <select name="syahriahStatus" value={editingSantri?.syahriahStatus || 'WAJIB'} onChange={e => updateFormField('syahriahStatus', e.target.value)} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
+                        <option value="WAJIB">Wajib Bayar</option>
+                        <option value="GRATIS">Gratis (Bebas Biaya)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nominal Custom SPP (Opsional)</label>
+                      <input type="number" name="syahriahNominalKustom" value={editingSantri?.syahriahNominalKustom || ''} onChange={e => updateFormField('syahriahNominalKustom', e.target.value)} placeholder="Contoh: 50000" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
                   </div>
+
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">NIK (16 Digit)</label>
-                    <input type="text" name="nik" defaultValue={editingSantri?.nik || ''} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Jenis Kelamin</label>
-                    <select name="jenisKelamin" defaultValue={editingSantri?.jenisKelamin || 'L'} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
-                      <option value="L">Laki-Laki (L)</option>
-                      <option value="P">Perempuan (P)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Program / Jenjang</label>
-                    <select name="jenjangId" defaultValue={editingSantri?.jenjangId || ''} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
-                      <option value="">Pilih Program</option>
-                      {jenjangList.map(j => (
-                        <option key={j.id} value={j.id}>{j.nama}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tempat Lahir</label>
-                    <input type="text" name="tempatLahir" defaultValue={editingSantri?.tempatLahir || ''} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Lahir</label>
-                    <input type="date" name="tanggalLahir" defaultValue={editingSantri?.tanggalLahir || ''} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Sekolah Asal</label>
-                    <input type="text" name="sekolah" defaultValue={editingSantri?.sekolah || ''} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Tanggal Masuk TPQ/RTQ</label>
-                    <input type="date" name="tanggalMasuk" defaultValue={editingSantri?.tanggalMasuk || ''} required className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status Syahriah (SPP)</label>
-                    <select name="syahriahStatus" defaultValue={editingSantri?.syahriahStatus || 'WAJIB'} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
-                      <option value="WAJIB">Wajib Bayar</option>
-                      <option value="GRATIS">Gratis (Bebas Biaya)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Hubungkan KK</label>
-                    <select name="kkId" defaultValue={editingSantri?.kkId || ''} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
-                      <option value="">Pilih No KK</option>
-                      {kkList.map(k => (
-                        <option key={k.id} value={k.id}>{k.nomorKk} - Ayah: {k.namaAyah}</option>
-                      ))}
-                    </select>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Alamat Domisili Lengkap Santri</label>
+                    <textarea name="alamat" value={editingSantri?.alamat || ''} onChange={e => updateFormField('alamat', e.target.value)} required rows={2} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
                   </div>
                 </div>
 
-                <div>
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Alamat Domisili Lengkap</label>
-                  <textarea name="alamat" defaultValue={editingSantri?.alamat || ''} required rows={3} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                <div className="space-y-4 pt-4 border-t border-slate-100">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Data Orang Tua / Wali (KK)</h4>
+                    {editingSantri?.nomorKk && (
+                      <div>
+                        {kkList.some(k => k.nomorKk === editingSantri.nomorKk) ? (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded-md border border-emerald-100">KK Terdaftar (Autofill Aktif)</span>
+                        ) : (
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-md border border-blue-100">KK Baru (Akan Disimpan)</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nomor Kartu Keluarga (16 Digit)</label>
+                      <input type="text" name="nomorKk" value={editingSantri?.nomorKk || ''} onChange={handleNomorKkChange} required placeholder="Masukkan 16 digit nomor KK" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nama Kepala Keluarga (Ayah)</label>
+                      <input type="text" name="namaAyah" value={editingSantri?.namaAyah || ''} onChange={e => updateFormField('namaAyah', e.target.value)} required placeholder="Nama Ayah kandung" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nama Ibu Kandung</label>
+                      <input type="text" name="namaIbu" value={editingSantri?.namaIbu || ''} onChange={e => updateFormField('namaIbu', e.target.value)} required placeholder="Nama Ibu kandung" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nama Wali (Opsional)</label>
+                      <input type="text" name="namaWali" value={editingSantri?.namaWali || ''} onChange={e => updateFormField('namaWali', e.target.value)} placeholder="Nama wali jika tinggal dengan wali" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">RT</label>
+                      <input type="text" name="rt" value={editingSantri?.rt || ''} onChange={e => updateFormField('rt', e.target.value)} placeholder="01" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">RW</label>
+                      <input type="text" name="rw" value={editingSantri?.rw || ''} onChange={e => updateFormField('rw', e.target.value)} placeholder="02" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Desa / Kelurahan</label>
+                      <input type="text" name="desa" value={editingSantri?.desa || ''} onChange={e => updateFormField('desa', e.target.value)} placeholder="Desa" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Kecamatan</label>
+                      <input type="text" name="kecamatan" value={editingSantri?.kecamatan || ''} onChange={e => updateFormField('kecamatan', e.target.value)} placeholder="Kecamatan" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Kabupaten / Kota</label>
+                      <input type="text" name="kabupaten" value={editingSantri?.kabupaten || ''} onChange={e => updateFormField('kabupaten', e.target.value)} placeholder="Kabupaten" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Provinsi</label>
+                      <input type="text" name="provinsi" value={editingSantri?.provinsi || ''} onChange={e => updateFormField('provinsi', e.target.value)} placeholder="Provinsi" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Alamat Jalan Kartu Keluarga</label>
+                    <textarea name="alamatKk" value={editingSantri?.alamatKk || ''} onChange={e => updateFormField('alamatKk', e.target.value)} placeholder="Alamat sesuai KK" rows={2} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status Aktif</label>
-                    <select name="statusAktif" defaultValue={editingSantri?.statusAktif === false ? 'false' : 'true'} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
-                      <option value="true">Aktif</option>
-                      <option value="false">Non-Aktif</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nominal Custom SPP (Opsional)</label>
-                    <input type="number" name="syahriahNominalKustom" defaultValue={editingSantri?.syahriahNominalKustom || ''} placeholder="Contoh: 50000" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500" />
-                  </div>
+                <div className="pt-4">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Status Keaktifan Santri</label>
+                  <select name="statusAktif" value={editingSantri?.statusAktif === false ? 'false' : 'true'} onChange={e => updateFormField('statusAktif', e.target.value === 'true')} className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 shadow-sm rounded-xl text-sm text-slate-800 focus:outline-none focus:border-brand-500">
+                    <option value="true">Aktif</option>
+                    <option value="false">Non-Aktif</option>
+                  </select>
                 </div>
 
                 <div className="flex justify-end gap-3 pt-6 border-t border-slate-50">

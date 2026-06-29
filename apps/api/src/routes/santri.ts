@@ -88,10 +88,56 @@ santriRouter.post('/', requireRole(['sekretariat', 'bendahara']), async (c) => {
   const id = crypto.randomUUID();
   const now = new Date();
 
+  // Kelola pembuatan/pencarian KK secara otomatis berdasarkan nomorKk
+  let finalKkId = kkId || null;
+  if (body.nomorKk) {
+    const existingKk = await db.select().from(kartuKeluarga)
+      .where(and(eq(kartuKeluarga.nomorKk, body.nomorKk), eq(kartuKeluarga.yayasanId, user.yayasanId)))
+      .get();
+
+    if (existingKk) {
+      finalKkId = existingKk.id;
+      // Sinkronkan data KK jika ada update
+      await db.update(kartuKeluarga).set({
+        namaAyah: body.namaAyah || existingKk.namaAyah,
+        namaIbu: body.namaIbu || existingKk.namaIbu,
+        namaWali: body.namaWali !== undefined ? body.namaWali : existingKk.namaWali,
+        alamat: body.alamatKk || body.alamat || existingKk.alamat,
+        rt: body.rt || existingKk.rt,
+        rw: body.rw || existingKk.rw,
+        desa: body.desa || existingKk.desa,
+        kecamatan: body.kecamatan || existingKk.kecamatan,
+        kabupaten: body.kabupaten || existingKk.kabupaten,
+        provinsi: body.provinsi || existingKk.provinsi,
+        updatedAt: now,
+      }).where(eq(kartuKeluarga.id, finalKkId));
+    } else {
+      // Buat KK baru secara transparan
+      finalKkId = crypto.randomUUID();
+      await db.insert(kartuKeluarga).values({
+        id: finalKkId,
+        yayasanId: user.yayasanId,
+        nomorKk: body.nomorKk,
+        namaAyah: body.namaAyah || '-',
+        namaIbu: body.namaIbu || '-',
+        namaWali: body.namaWali || null,
+        alamat: body.alamatKk || body.alamat || '-',
+        rt: body.rt || '-',
+        rw: body.rw || '-',
+        desa: body.desa || '-',
+        kecamatan: body.kecamatan || '-',
+        kabupaten: body.kabupaten || '-',
+        provinsi: body.provinsi || '-',
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
   await db.insert(santri).values({
     id,
     yayasanId: user.yayasanId,
-    kkId: kkId || null,
+    kkId: finalKkId,
     jenjangId: jenjangId || null,
     nama,
     nik: nik || null,
@@ -132,9 +178,55 @@ santriRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) =>
     return c.json({ error: 'Santri tidak ditemukan' }, 404);
   }
 
+  // Kelola pembuatan/pencarian KK secara otomatis berdasarkan nomorKk
+  let finalKkId = body.kkId !== undefined ? (body.kkId || null) : existing.kkId;
+  if (body.nomorKk) {
+    const existingKk = await db.select().from(kartuKeluarga)
+      .where(and(eq(kartuKeluarga.nomorKk, body.nomorKk), eq(kartuKeluarga.yayasanId, user.yayasanId)))
+      .get();
+
+    if (existingKk) {
+      finalKkId = existingKk.id;
+      // Sinkronkan data KK jika ada update
+      await db.update(kartuKeluarga).set({
+        namaAyah: body.namaAyah || existingKk.namaAyah,
+        namaIbu: body.namaIbu || existingKk.namaIbu,
+        namaWali: body.namaWali !== undefined ? body.namaWali : existingKk.namaWali,
+        alamat: body.alamatKk || existingKk.alamat,
+        rt: body.rt || existingKk.rt,
+        rw: body.rw || existingKk.rw,
+        desa: body.desa || existingKk.desa,
+        kecamatan: body.kecamatan || existingKk.kecamatan,
+        kabupaten: body.kabupaten || existingKk.kabupaten,
+        provinsi: body.provinsi || existingKk.provinsi,
+        updatedAt: now,
+      }).where(eq(kartuKeluarga.id, finalKkId));
+    } else {
+      // Buat KK baru secara transparan
+      finalKkId = crypto.randomUUID();
+      await db.insert(kartuKeluarga).values({
+        id: finalKkId,
+        yayasanId: user.yayasanId,
+        nomorKk: body.nomorKk,
+        namaAyah: body.namaAyah || '-',
+        namaIbu: body.namaIbu || '-',
+        namaWali: body.namaWali || null,
+        alamat: body.alamatKk || body.alamat || '-',
+        rt: body.rt || '-',
+        rw: body.rw || '-',
+        desa: body.desa || '-',
+        kecamatan: body.kecamatan || '-',
+        kabupaten: body.kabupaten || '-',
+        provinsi: body.provinsi || '-',
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  }
+
   await db.update(santri)
     .set({
-      kkId: body.kkId !== undefined ? (body.kkId || null) : existing.kkId,
+      kkId: finalKkId,
       jenjangId: body.jenjangId !== undefined ? (body.jenjangId || null) : existing.jenjangId,
       nama: body.nama ?? existing.nama,
       nik: body.nik !== undefined ? (body.nik || null) : existing.nik,
