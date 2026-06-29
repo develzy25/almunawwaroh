@@ -8,15 +8,23 @@ export interface AuthenticatedUser {
   id: string;
   yayasanId: string;
   nama: string;
-  email: string;
   role: 'ketua' | 'sekretariat' | 'bendahara';
   yayasanNama: string;
 }
 
 export async function authMiddleware(c: Context, next: Next) {
-  const sessionId = getCookie(c, 'session_token');
+  let sessionId = getCookie(c, 'session_token');
+  
+  // Fallback untuk perangkat mobile (iOS/Android) yang memblokir third-party cookie
   if (!sessionId) {
-    return c.json({ error: 'Unauthorized: Session cookie missing' }, 401);
+    const authHeader = c.req.header('Authorization');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      sessionId = authHeader.substring(7);
+    }
+  }
+
+  if (!sessionId) {
+    return c.json({ error: 'Unauthorized: Session missing' }, 401);
   }
 
   const db = getDb(c.env.DB);
@@ -48,7 +56,6 @@ export async function authMiddleware(c: Context, next: Next) {
     id: result.user.id,
     yayasanId: result.user.yayasanId,
     nama: result.user.nama,
-    email: result.user.email,
     role: result.user.role as 'ketua' | 'sekretariat' | 'bendahara',
     yayasanNama: result.yayasan.nama,
   } as AuthenticatedUser);

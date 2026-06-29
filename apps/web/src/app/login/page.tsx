@@ -46,7 +46,10 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMsg(null);
     try {
-      await api.post('/api/auth/login', data);
+      const res = await api.post('/api/auth/login', data);
+      if (res.token) {
+        localStorage.setItem('session_token', res.token);
+      }
       router.push('/dashboard');
     } catch (err: unknown) {
       setErrorMsg((err as Error).message || 'Gagal login. Silakan periksa kembali akun Anda.');

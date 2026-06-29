@@ -122,6 +122,7 @@ authRouter.post('/login', async (c) => {
   });
 
   return c.json({
+    token: sessionId,
     user: {
       id: user.id,
       yayasanId: user.yayasanId,

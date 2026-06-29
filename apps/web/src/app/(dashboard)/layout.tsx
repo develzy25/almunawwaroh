@@ -17,6 +17,7 @@ export default function DashboardRouteGroupLayout({ children }: { children: Reac
       })
       .catch(() => {
         // Jika session habis/tidak valid, tendang kembali ke login
+        localStorage.removeItem('session_token');
         router.push('/login');
       });
   }, [router]);

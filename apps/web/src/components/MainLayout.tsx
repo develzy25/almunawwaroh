@@ -32,6 +32,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   const handleLogout = async () => {
     try {
       await api.post('/api/auth/logout', {});
+      localStorage.removeItem('session_token');
       router.push('/login');
     } catch (error) {
       console.error('Logout error:', error);
