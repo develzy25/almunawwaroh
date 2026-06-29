@@ -116,7 +116,7 @@ authRouter.post('/login', async (c) => {
   setCookie(c, 'session_token', sessionId, {
     httpOnly: true,
     secure: true, // Requires HTTPS (localhost is fine in modern dev tools)
-    sameSite: 'Lax',
+    sameSite: 'None',
     path: '/',
     maxAge: maxAgeDays * 24 * 60 * 60,
   });
