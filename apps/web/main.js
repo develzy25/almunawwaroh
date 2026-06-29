@@ -22,13 +22,44 @@ function startLocalServer() {
     }
 
     const filePath = path.join(__dirname, 'out', safePath);
+    const ext = path.extname(filePath).toLowerCase();
     
-    // Check if file exists, if not serve index.html (Next.js fallback)
-    fs.stat(filePath, (err, stats) => {
-      if (err || !stats.isFile()) {
-        serveFile(path.join(__dirname, 'out', 'index.html'), res);
+    const mimeTypes = {
+      '.html': 'text/html',
+      '.css': 'text/css',
+      '.js': 'text/javascript',
+      '.json': 'application/json',
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.ico': 'image/x-icon',
+      '.woff': 'font/woff',
+      '.woff2': 'font/woff2',
+      '.ttf': 'font/ttf',
+      '.otf': 'font/otf'
+    };
+
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+
+    // Attempt to read the file directly
+    fs.readFile(filePath, (err, content) => {
+      if (err) {
+        // If file not found (e.g. client side route), fallback to index.html
+        const fallbackPath = path.join(__dirname, 'out', 'index.html');
+        fs.readFile(fallbackPath, (fallbackErr, fallbackContent) => {
+          if (fallbackErr) {
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end(`Server Error: ${fallbackErr.code}`);
+          } else {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(fallbackContent);
+          }
+        });
       } else {
-        serveFile(filePath, res);
+        res.writeHead(200, { 'Content-Type': contentType });
+        res.end(content);
       }
     });
   });
@@ -38,38 +69,6 @@ function startLocalServer() {
     const port = server.address().port;
     console.log(`Local server running on http://127.0.0.1:${port}`);
     createWindow(port);
-  });
-}
-
-function serveFile(filePath, res) {
-  const ext = path.extname(filePath).toLowerCase();
-  const mimeTypes = {
-    '.html': 'text/html',
-    '.css': 'text/css',
-    '.js': 'text/javascript',
-    '.json': 'application/json',
-    '.png': 'image/png',
-    '.jpg': 'image/jpeg',
-    '.jpeg': 'image/jpeg',
-    '.gif': 'image/gif',
-    '.svg': 'image/svg+xml',
-    '.ico': 'image/x-icon',
-    '.woff': 'font/woff',
-    '.woff2': 'font/woff2',
-    '.ttf': 'font/ttf',
-    '.otf': 'font/otf'
-  };
-
-  const contentType = mimeTypes[ext] || 'application/octet-stream';
-
-  fs.readFile(filePath, (err, content) => {
-    if (err) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.end(`Server Error: ${err.code}`);
-    } else {
-      res.writeHead(200, { 'Content-Type': contentType });
-      res.end(content, 'utf-8');
-    }
   });
 }
 
@@ -88,6 +87,9 @@ function createWindow(port) {
 
   win.setMenuBarVisibility(false);
   win.loadURL(`http://127.0.0.1:${port}`);
+
+  // Open DevTools to inspect any errors (console logs) causing blank page
+  win.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
