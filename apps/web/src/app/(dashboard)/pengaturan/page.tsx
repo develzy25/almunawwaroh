@@ -209,7 +209,7 @@ export default function PengaturanPage() {
             <h2 className="text-lg font-bold text-slate-800 font-display flex items-center gap-2">
               <DollarSign className="w-5 h-5 text-primary" /> Program Jenjang & SPP
             </h2>
-            {isKetua && (
+            {(isKetua || userRole === 'bendahara') && (
               <Button onClick={() => setShowJenjangModal({})} className="rounded-xl h-9 px-3 text-xs flex items-center gap-1 shadow-sm">
                 <Plus className="w-4 h-4" /> Tambah Jenjang
               </Button>
@@ -223,7 +223,7 @@ export default function PengaturanPage() {
                   <h4 className="font-bold text-slate-800">{j.nama}</h4>
                   <p className="text-xs text-slate-400 mt-0.5">Biaya default: {formatIDR(j.nominalSyahriah)}/bulan</p>
                 </div>
-                {isKetua && (
+                {(isKetua || userRole === 'bendahara') && (
                   <div className="flex gap-2">
                     <button 
                       onClick={() => setShowJenjangModal(j)}

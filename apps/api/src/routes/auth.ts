@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { setCookie, deleteCookie, getCookie } from 'hono/cookie';
+
 import { getDb } from '../db/client';
-import { users, sessions, yayasan } from '../db/schema';
+import { users, sessions, yayasan, jenjang } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
 import { authMiddleware, AuthenticatedUser } from '../middleware/auth';
 
@@ -62,6 +63,26 @@ authRouter.post('/register-yayasan', async (c) => {
       passwordHash,
       nama: namaUser,
       role: 'ketua',
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // 3. Insert default Jenjang: TPQ
+    await db.insert(jenjang).values({
+      id: crypto.randomUUID(),
+      yayasanId,
+      nama: 'TPQ',
+      nominalSyahriah: 0,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    // 4. Insert default Jenjang: RTQ
+    await db.insert(jenjang).values({
+      id: crypto.randomUUID(),
+      yayasanId,
+      nama: 'RTQ',
+      nominalSyahriah: 0,
       createdAt: now,
       updatedAt: now,
     });
