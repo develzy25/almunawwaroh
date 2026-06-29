@@ -58,17 +58,22 @@ jobs:
           $currentTag = "v$currentVersion"
           Write-Host "Current tag: $currentTag"
           
-          # Ambil daftar rilis dan hapus yang lama
-          $releases = gh release list --limit 100
-          foreach ($line in $releases) {
-              if ($line -match '^(\S+)\s+') {
-                  $tag = $Matches[1]
-                  if ($tag -ne $currentTag) {
+          # Ambil daftar rilis dalam format JSON (lebih akurat daripada parsing kolom teks)
+          $releasesJson = gh release list --limit 100 --json tagName
+          if ($releasesJson) {
+              $releases = $releasesJson | ConvertFrom-Json
+              foreach ($r in $releases) {
+                  $tag = $r.tagName
+                  if ($tag -and $tag -ne $currentTag) {
                       Write-Host "Deleting old release and tag: $tag"
                       gh release delete $tag --yes --cleanup-tag
+                      if ($LASTEXITCODE -ne 0) {
+                          Write-Warning "Gagal menghapus rilis/tag: $tag. Melanjutkan..."
+                      }
                   }
               }
           }
+          exit 0
         shell: powershell
 
       - name: Push Version Update
