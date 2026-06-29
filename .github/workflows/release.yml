@@ -1,12 +1,7 @@
 name: Build and Release Desktop App
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'apps/web/**'
-      - '.github/workflows/release.yml'
+  workflow_dispatch: # Hanya dijalankan secara manual dari tab Actions di GitHub ketika Anda minta
 
 jobs:
   release:
