@@ -259,26 +259,40 @@ export default function SantriPage() {
 
   const handleExportExcel = () => {
     if (activeTab === 'santri') {
-      const data = filteredSantri.map(s => ({
-        ID: s.id, 
-        NIK: s.nik || '', 
-        Nama: s.nama, 
-        'Jenis Kelamin (L/P)': s.jenisKelamin, 
-        'Tempat Lahir': s.tempatLahir, 
-        'Tanggal Lahir (YYYY-MM-DD)': s.tanggalLahir, 
-        'Nama Jenjang': s.jenjangNama || '',
-        'Sekolah Asal': s.sekolah || '',
-        'Tanggal Masuk (YYYY-MM-DD)': s.tanggalMasuk || '',
-        'Status SPP (WAJIB/GRATIS)': s.syahriahStatus || 'WAJIB',
-        'Nomor KK': s.kkNomor || '',
-        Alamat: s.alamat || '',
-        'Status Aktif (Y/T)': s.statusAktif ? 'Y' : 'T',
-        'Nominal Custom SPP': s.syahriahNominalKustom || ''
-      }));
+      const data = filteredSantri.map(s => {
+        const k = kkList.find(x => x.id === s.kkId);
+        return {
+          ID: s.id, 
+          NIK: s.nik || '', 
+          Nama: s.nama, 
+          'Jenis Kelamin (L/P)': s.jenisKelamin, 
+          'Tempat Lahir': s.tempatLahir, 
+          'Tanggal Lahir (YYYY-MM-DD)': s.tanggalLahir, 
+          'Nama Jenjang': s.jenjangNama || '',
+          'Sekolah Asal': s.sekolah || '',
+          'Tanggal Masuk (YYYY-MM-DD)': s.tanggalMasuk || '',
+          'Status SPP (WAJIB/GRATIS)': s.syahriahStatus || 'WAJIB',
+          'Nomor KK': s.kkNomor || '',
+          'Nama Ayah': k?.namaAyah || '',
+          'Nama Ibu': k?.namaIbu || '',
+          'Nama Wali': k?.namaWali || '',
+          RT: k?.rt || '',
+          RW: k?.rw || '',
+          Desa: k?.desa || '',
+          Kecamatan: k?.kecamatan || '',
+          Kabupaten: k?.kabupaten || '',
+          Provinsi: k?.provinsi || '',
+          'Alamat KK': k?.alamat || '',
+          Alamat: s.alamat || '',
+          'Status Aktif (Y/T)': s.statusAktif ? 'Y' : 'T',
+          'Nominal Custom SPP': s.syahriahNominalKustom || ''
+        };
+      });
       exportToExcel(data, 'Data_Santri', [
         'ID', 'NIK', 'Nama', 'Jenis Kelamin (L/P)', 'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)', 
         'Nama Jenjang', 'Sekolah Asal', 'Tanggal Masuk (YYYY-MM-DD)', 'Status SPP (WAJIB/GRATIS)', 
-        'Nomor KK', 'Alamat', 'Status Aktif (Y/T)', 'Nominal Custom SPP'
+        'Nomor KK', 'Nama Ayah', 'Nama Ibu', 'Nama Wali', 'RT', 'RW', 'Desa', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Alamat KK',
+        'Alamat', 'Status Aktif (Y/T)', 'Nominal Custom SPP'
       ]);
     } else {
       const data = filteredKk.map(k => ({
@@ -290,7 +304,11 @@ export default function SantriPage() {
 
   const handleDownloadTemplate = () => {
     const headers = activeTab === 'santri' 
-      ? ['NIK', 'Nama', 'Jenis Kelamin (L/P)', 'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)', 'Nama Jenjang', 'Sekolah Asal', 'Tanggal Masuk (YYYY-MM-DD)', 'Status SPP (WAJIB/GRATIS)', 'Nomor KK', 'Alamat', 'Status Aktif (Y/T)', 'Nominal Custom SPP']
+      ? [
+          'NIK', 'Nama', 'Jenis Kelamin (L/P)', 'Tempat Lahir', 'Tanggal Lahir (YYYY-MM-DD)', 'Nama Jenjang', 'Sekolah Asal', 'Tanggal Masuk (YYYY-MM-DD)', 'Status SPP (WAJIB/GRATIS)', 
+          'Nomor KK', 'Nama Ayah', 'Nama Ibu', 'Nama Wali', 'RT', 'RW', 'Desa', 'Kecamatan', 'Kabupaten', 'Provinsi', 'Alamat KK', 
+          'Alamat', 'Status Aktif (Y/T)', 'Nominal Custom SPP'
+        ]
       : ['Nomor KK', 'Nama Ayah', 'Nama Ibu'];
     downloadExcelTemplate(headers, `Template_${activeTab === 'santri' ? 'Santri' : 'KK'}`);
   };
@@ -331,6 +349,17 @@ export default function SantriPage() {
             tanggalMasuk: row['Tanggal Masuk (YYYY-MM-DD)'] ? String(row['Tanggal Masuk (YYYY-MM-DD)']) : new Date().toISOString().split('T')[0],
             syahriahStatus: String(row['Status SPP (WAJIB/GRATIS)']).toUpperCase() === 'GRATIS' ? 'GRATIS' : 'WAJIB',
             kkId,
+            nomorKk: row['Nomor KK'] ? String(row['Nomor KK']) : undefined,
+            namaAyah: row['Nama Ayah'] ? String(row['Nama Ayah']) : undefined,
+            namaIbu: row['Nama Ibu'] ? String(row['Nama Ibu']) : undefined,
+            namaWali: row['Nama Wali'] ? String(row['Nama Wali']) : undefined,
+            alamatKk: row['Alamat KK'] ? String(row['Alamat KK']) : undefined,
+            rt: row.RT ? String(row.RT) : undefined,
+            rw: row.RW ? String(row.RW) : undefined,
+            desa: row.Desa ? String(row.Desa) : undefined,
+            kecamatan: row.Kecamatan ? String(row.Kecamatan) : undefined,
+            kabupaten: row.Kabupaten ? String(row.Kabupaten) : undefined,
+            provinsi: row.Provinsi ? String(row.Provinsi) : undefined,
             alamat: row.Alamat ? String(row.Alamat) : '-',
             statusAktif: String(row['Status Aktif (Y/T)']).toUpperCase() !== 'T',
             syahriahNominalKustom: row['Nominal Custom SPP'] ? Number(row['Nominal Custom SPP']) : undefined,
