@@ -4,6 +4,7 @@ import { requireRole } from '../middleware/role';
 import { getDb } from '../db/client';
 import { santri, kartuKeluarga, jenjang, santriDokumen } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
+import { deleteFromCloudinary, getResourceType } from '../utils/cloudinary';
 
 const santriRouter = new Hono<{ Bindings: { DB: D1Database }; Variables: { user: AuthenticatedUser } }>();
 
@@ -172,6 +173,24 @@ santriRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c)
     return c.json({ error: 'Santri tidak ditemukan' }, 404);
   }
 
+  // 1. Hapus foto profil dari Cloudinary jika ada
+  if (existing.fotoCloudinaryId) {
+    await deleteFromCloudinary(c, existing.fotoCloudinaryId, 'image');
+  }
+
+  // 2. Ambil semua dokumen santri ini dan hapus dari Cloudinary
+  const docs = await db.select().from(santriDokumen)
+    .where(and(eq(santriDokumen.santriId, id), eq(santriDokumen.yayasanId, user.yayasanId)))
+    .all();
+
+  for (const doc of docs) {
+    if (doc.cloudinaryId) {
+      const resType = getResourceType(doc.cloudinaryId, doc.secureUrl);
+      await deleteFromCloudinary(c, doc.cloudinaryId, resType);
+    }
+  }
+
+  // 3. Hapus dari database (D1 SQLite akan meng-cascade delete tabel santriDokumen)
   await db.delete(santri).where(eq(santri.id, id));
   return c.json({ success: true });
 });
@@ -229,6 +248,13 @@ santriRouter.delete('/documents/:docId', requireRole(['sekretariat', 'bendahara'
     return c.json({ error: 'Dokumen tidak ditemukan' }, 404);
   }
 
+  // Hapus dari Cloudinary
+  if (existing.cloudinaryId) {
+    const resType = getResourceType(existing.cloudinaryId, existing.secureUrl);
+    await deleteFromCloudinary(c, existing.cloudinaryId, resType);
+  }
+
+  // Hapus dari database
   await db.delete(santriDokumen).where(eq(santriDokumen.id, docId));
   return c.json({ success: true });
 });

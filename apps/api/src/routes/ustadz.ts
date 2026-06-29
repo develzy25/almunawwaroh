@@ -4,6 +4,7 @@ import { requireRole } from '../middleware/role';
 import { getDb } from '../db/client';
 import { ustadz, ustadzDokumen, ustadzJabatan } from '../db/schema';
 import { eq, and } from 'drizzle-orm';
+import { deleteFromCloudinary, getResourceType } from '../utils/cloudinary';
 
 const ustadzRouter = new Hono<{ Bindings: { DB: D1Database }; Variables: { user: AuthenticatedUser } }>();
 
@@ -164,6 +165,38 @@ ustadzRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c)
     return c.json({ error: 'Ustadz tidak ditemukan' }, 404);
   }
 
+  // 1. Hapus foto profil dari Cloudinary jika ada
+  if (existing.foto) {
+    let publicId = existing.foto;
+    // Jika disimpan sebagai URL lengkap, ekstrak public_id-nya
+    if (existing.foto.startsWith('http')) {
+      const parts = existing.foto.split('/upload/');
+      if (parts.length > 1) {
+        const pathParts = parts[1].split('/');
+        if (pathParts[0].startsWith('v')) {
+          pathParts.shift(); // Buang folder versi (v123456)
+        }
+        const fullPath = pathParts.join('/');
+        const lastDot = fullPath.lastIndexOf('.');
+        publicId = lastDot !== -1 ? fullPath.substring(0, lastDot) : fullPath;
+      }
+    }
+    await deleteFromCloudinary(c, publicId, 'image');
+  }
+
+  // 2. Ambil semua berkas dokumen ustadz ini dan hapus dari Cloudinary
+  const docs = await db.select().from(ustadzDokumen)
+    .where(and(eq(ustadzDokumen.ustadzId, id), eq(ustadzDokumen.yayasanId, user.yayasanId)))
+    .all();
+
+  for (const doc of docs) {
+    if (doc.cloudinaryId) {
+      const resType = getResourceType(doc.cloudinaryId, doc.secureUrl);
+      await deleteFromCloudinary(c, doc.cloudinaryId, resType);
+    }
+  }
+
+  // 3. Hapus dari database (D1 akan meng-cascade delete ustadzJabatan & ustadzDokumen)
   await db.delete(ustadz).where(eq(ustadz.id, id));
   return c.json({ success: true });
 });

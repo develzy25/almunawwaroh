@@ -27,6 +27,29 @@ export default function UstadzPage() {
   const [newJabatan, setNewJabatan] = useState<Partial<UstadzJabatan>>({ status: 'Aktif' });
   const [activeTab, setActiveTab] = useState('biodata');
 
+  // State untuk Cloudinary Photo Upload
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'ustadz');
+    try {
+      const res = await api.post('/api/upload', formData);
+      setEditingTeacher(prev => ({
+        ...prev,
+        foto: res.secureUrl, // simpan URL lengkap di field foto
+      }));
+    } catch (err) {
+      alert('Gagal mengunggah foto: ' + (err as Error).message);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
   // Queries
   const { data: userProfile } = useQuery<UserProfile>({
     queryKey: ['me'],
@@ -225,8 +248,11 @@ export default function UstadzPage() {
                     >
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-bold text-lg">
-                            {t.namaLengkap.charAt(0)}
+                          <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-bold text-lg overflow-hidden">
+                            {t.foto ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img src={t.foto} alt="" className="w-full h-full object-cover" />
+                            ) : t.namaLengkap.charAt(0)}
                           </div>
                           <div>
                             <div className="font-semibold text-slate-800">{t.namaLengkap}</div>
@@ -270,8 +296,11 @@ export default function UstadzPage() {
             <div className="bg-white rounded-3xl border border-slate-100 shadow-premium p-6 sticky top-24">
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-bold text-2xl">
-                    {selectedTeacher.namaLengkap.charAt(0)}
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-100 flex items-center justify-center shrink-0 text-emerald-700 font-bold text-2xl overflow-hidden shadow-sm">
+                    {selectedTeacher.foto ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={selectedTeacher.foto} alt="" className="w-full h-full object-cover" />
+                    ) : selectedTeacher.namaLengkap.charAt(0)}
                   </div>
                   <div>
                     <h2 className="text-xl font-bold font-display text-slate-800 leading-tight">{selectedTeacher.namaLengkap}</h2>
@@ -418,7 +447,25 @@ export default function UstadzPage() {
                   className="space-y-4"
                 >
                   {activeTab === 'biodata' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      {/* Photo Upload untuk Profil Ustadz */}
+                      <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                        <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400 overflow-hidden shrink-0 shadow-inner">
+                          {editingTeacher?.foto ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={editingTeacher.foto} alt="Foto Profil" className="w-full h-full object-cover" />
+                          ) : 'FOTO'}
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-xs font-semibold text-slate-600 block mb-1">Foto Profil Ustadz/ah</span>
+                          <input type="file" accept="image/*" className="hidden" id="photo-input-ustadz" onChange={handlePhotoChange} disabled={isUploadingPhoto} />
+                          <label htmlFor="photo-input-ustadz" className={`inline-flex items-center justify-center px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl cursor-pointer shadow-sm transition-all ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {isUploadingPhoto ? 'Mengunggah...' : 'Pilih Foto Profil'}
+                          </label>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-slate-700 mb-1">Nomor Induk / NIK</label>
                         <input

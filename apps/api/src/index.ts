@@ -8,6 +8,7 @@ import { santriRouter } from './routes/santri';
 import { ustadzRouter } from './routes/ustadz';
 import { keuanganRouter } from './routes/keuangan';
 import { settingsRouter } from './routes/settings';
+import { uploadRouter } from './routes/upload';
 import { AuthenticatedUser } from './middleware/auth';
 
 type Bindings = {
@@ -44,6 +45,7 @@ app.route('/api/santri', santriRouter);
 app.route('/api/ustadz', ustadzRouter);
 app.route('/api/keuangan', keuanganRouter);
 app.route('/api/settings', settingsRouter);
+app.route('/api/upload', uploadRouter);
 
 // Global Error Handler
 app.onError((err, c) => {

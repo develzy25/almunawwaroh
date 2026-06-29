@@ -26,6 +26,69 @@ export default function SantriPage() {
   const [editingSantri, setEditingSantri] = useState<Partial<Santri> | null>(null);
   const [editingKk, setEditingKk] = useState<Partial<Kk> | null>(null);
 
+  // States & Refs untuk Cloudinary Upload
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [isUploadingDoc, setIsUploadingDoc] = useState(false);
+  const docInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploadingPhoto(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'santri');
+    try {
+      const res = await api.post('/api/upload', formData);
+      setEditingSantri(prev => ({
+        ...prev,
+        fotoCloudinaryId: res.cloudinaryId,
+        fotoSecureUrl: res.secureUrl,
+        fotoWidth: res.width,
+        fotoHeight: res.height,
+        fotoBytes: res.bytes,
+      }));
+    } catch (err) {
+      alert('Gagal mengunggah foto: ' + (err as Error).message);
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const handleUploadDoc = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !selectedSantriId) return;
+    setIsUploadingDoc(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', 'dokumen');
+    try {
+      const res = await api.post('/api/upload', formData);
+      await api.post(`/api/santri/${selectedSantriId}/documents`, {
+        namaDokumen: file.name,
+        cloudinaryId: res.cloudinaryId,
+        secureUrl: res.secureUrl,
+        bytes: res.bytes,
+      });
+      queryClient.invalidateQueries({ queryKey: ['santriDetail', selectedSantriId] });
+    } catch (err) {
+      alert('Gagal mengunggah dokumen: ' + (err as Error).message);
+    } finally {
+      setIsUploadingDoc(false);
+      if (docInputRef.current) docInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteDoc = async (docId: string) => {
+    if (!confirm('Hapus berkas lampiran ini?')) return;
+    try {
+      await api.delete(`/api/santri/documents/${docId}`);
+      queryClient.invalidateQueries({ queryKey: ['santriDetail', selectedSantriId] });
+    } catch (err) {
+      alert('Gagal menghapus dokumen: ' + (err as Error).message);
+    }
+  };
+
   // Queries
   const { data: santriList = [] } = useQuery<Santri[]>({
     queryKey: ['santri'],
@@ -443,12 +506,25 @@ export default function SantriPage() {
 
                     {/* Dokumen Attachment List */}
                     <div className="pt-4 border-t border-slate-50">
-                      <h4 className="text-xs font-bold text-slate-800 mb-2">Dokumen Terlampir</h4>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs font-bold text-slate-800">Dokumen Terlampir</h4>
+                        <div>
+                          <input type="file" ref={docInputRef} onChange={handleUploadDoc} className="hidden" id="doc-upload-input" />
+                          <label htmlFor="doc-upload-input" className={`text-[10px] font-bold text-primary hover:underline cursor-pointer ${isUploadingDoc ? 'opacity-50 pointer-events-none' : ''}`}>
+                            {isUploadingDoc ? 'Mengunggah...' : '+ Unggah Berkas'}
+                          </label>
+                        </div>
+                      </div>
                       <div className="space-y-2">
                         {selectedSantri.dokumen?.map((d: SantriDokumen) => (
                           <div key={d.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-xl text-[11px]">
-                            <span className="font-semibold text-slate-600 truncate max-w-[150px]">{d.namaDokumen}</span>
-                            <a href={d.secureUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">Lihat</a>
+                            <span className="font-semibold text-slate-600 truncate max-w-[150px]" title={d.namaDokumen}>{d.namaDokumen}</span>
+                            <div className="flex items-center gap-2">
+                              <a href={d.secureUrl} target="_blank" rel="noopener noreferrer" className="text-primary font-bold hover:underline">Lihat</a>
+                              <button onClick={() => handleDeleteDoc(d.id)} className="text-red-400 hover:text-red-600 transition-colors p-0.5">
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         ))}
                         {(!selectedSantri.dokumen || selectedSantri.dokumen.length === 0) && (
@@ -554,10 +630,28 @@ export default function SantriPage() {
                 const formData = new FormData(e.currentTarget);
                 const values = Object.fromEntries(formData.entries());
                 saveSantriMutation.mutate({
+                  ...editingSantri,
                   ...values,
                   statusAktif: values.statusAktif === 'true',
                 });
               }} className="space-y-4">
+                {/* File Upload untuk Foto Profil */}
+                <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400 overflow-hidden shrink-0 shadow-inner">
+                    {editingSantri?.fotoSecureUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={editingSantri.fotoSecureUrl} alt="Foto Profil" className="w-full h-full object-cover" />
+                    ) : 'FOTO'}
+                  </div>
+                  <div className="flex-1">
+                    <span className="text-xs font-semibold text-slate-600 block mb-1">Foto Profil Santri</span>
+                    <input type="file" accept="image/*" className="hidden" id="photo-input" onChange={handlePhotoChange} disabled={isUploadingPhoto} />
+                    <label htmlFor="photo-input" className={`inline-flex items-center justify-center px-4 py-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl cursor-pointer shadow-sm transition-all ${isUploadingPhoto ? 'opacity-50 pointer-events-none' : ''}`}>
+                      {isUploadingPhoto ? 'Mengunggah...' : 'Pilih Foto Profil'}
+                    </label>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Nama Lengkap</label>
