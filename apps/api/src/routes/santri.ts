@@ -39,7 +39,7 @@ santriRouter.get('/', async (c) => {
 // Get detailed santri profile
 santriRouter.get('/:id', async (c) => {
   const user = c.get('user');
-  const id = c.req.param('id');
+  const id = c.req.param('id')!;
   const db = getDb(c.env.DB);
 
   const detail = await db.select({
@@ -119,7 +119,7 @@ santriRouter.post('/', requireRole(['sekretariat', 'bendahara']), async (c) => {
 // Update santri data (Sekretariat / Bendahara)
 santriRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
   const user = c.get('user');
-  const id = c.req.param('id');
+  const id = c.req.param('id')!;
   const body = await c.req.json();
   const db = getDb(c.env.DB);
   const now = new Date();
@@ -162,7 +162,7 @@ santriRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) =>
 // Delete santri (Sekretariat / Bendahara)
 santriRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
   const user = c.get('user');
-  const id = c.req.param('id');
+  const id = c.req.param('id')!;
   const db = getDb(c.env.DB);
 
   const existing = await db.select().from(santri)
@@ -198,7 +198,7 @@ santriRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c)
 // Attach document to Santri
 santriRouter.post('/:id/documents', requireRole(['sekretariat', 'bendahara']), async (c) => {
   const user = c.get('user');
-  const santriId = c.req.param('id');
+  const santriId = c.req.param('id')!;
   const body = await c.req.json();
   const { namaDokumen, cloudinaryId, secureUrl, bytes } = body;
 
@@ -237,7 +237,7 @@ santriRouter.post('/:id/documents', requireRole(['sekretariat', 'bendahara']), a
 // Delete Santri Document
 santriRouter.delete('/documents/:docId', requireRole(['sekretariat', 'bendahara']), async (c) => {
   const user = c.get('user');
-  const docId = c.req.param('docId');
+  const docId = c.req.param('docId')!;
   const db = getDb(c.env.DB);
 
   const existing = await db.select().from(santriDokumen)

@@ -50,5 +50,26 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run build:exe -- --publish always
 
+      - name: Clean Up Old Releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $currentVersion = (Get-Content apps/web/package.json | ConvertFrom-Json).version
+          $currentTag = "v$currentVersion"
+          Write-Host "Current tag: $currentTag"
+          
+          # Ambil daftar rilis dan hapus yang lama
+          $releases = gh release list --limit 100
+          foreach ($line in $releases) {
+              if ($line -match '^(\S+)\s+') {
+                  $tag = $Matches[1]
+                  if ($tag -ne $currentTag) {
+                      Write-Host "Deleting old release and tag: $tag"
+                      gh release delete $tag --yes --cleanup-tag
+                  }
+              }
+          }
+        shell: powershell
+
       - name: Push Version Update
         run: git push origin main

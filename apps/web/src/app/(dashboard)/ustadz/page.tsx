@@ -447,7 +447,7 @@ export default function UstadzPage() {
                   className="space-y-4"
                 >
                   {activeTab === 'biodata' && (
-                    <div className="space-y-4">
+                    <>
                       {/* Photo Upload untuk Profil Ustadz */}
                       <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center font-bold text-slate-400 overflow-hidden shrink-0 shadow-inner">
@@ -528,6 +528,7 @@ export default function UstadzPage() {
                         />
                       </div>
                     </div>
+                  </>
                   )}
 
                   {activeTab === 'mengajar' && (
