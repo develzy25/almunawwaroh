@@ -82,7 +82,7 @@ settingsRouter.post('/users', requireRole(['ketua']), async (c) => {
     return c.json({ error: 'Semua kolom harus diisi' }, 400);
   }
 
-  if (role !== 'bendahara' && role !== 'sekretariat') {
+  if (role !== 'bendahara' && role !== 'sekretariat' && role !== 'ketua') {
     return c.json({ error: 'Role tidak valid' }, 400);
   }
 

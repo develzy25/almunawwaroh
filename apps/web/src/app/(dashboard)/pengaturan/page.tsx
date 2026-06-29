@@ -282,7 +282,7 @@ export default function PengaturanPage() {
                         </span>
                       </div>
                     </div>
-                    {u.role !== 'ketua' && u.id !== userProfile?.user?.id && (
+                    {u.id !== userProfile?.user?.id && (
                       <button 
                         onClick={() => { if(confirm(`Hapus akun ${u.nama}?`)) deleteUserMutation.mutate(u.id); }}
                         className="p-1.5 hover:bg-red-50 rounded-lg text-slate-400 hover:text-red-500 transition-colors"
@@ -417,6 +417,7 @@ export default function PengaturanPage() {
                   >
                     <option value="bendahara">Bendahara (Keuangan)</option>
                     <option value="sekretariat">Sekretariat (Data Pokok)</option>
+                    <option value="ketua">Ketua (Semua Akses / Admin)</option>
                   </select>
                 </div>
 
