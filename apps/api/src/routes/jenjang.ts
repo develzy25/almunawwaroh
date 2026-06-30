@@ -51,7 +51,7 @@ jenjangRouter.post('/', requireRole(['ketua', 'bendahara']), async (c) => {
 // Update program (Bendahara / Ketua)
 jenjangRouter.put('/:id', requireRole(['ketua', 'bendahara']), async (c) => {
   const user = c.get('user');
-  const id = c.req.param('id');
+  const id = c.req.param('id') as string;
   const body = await c.req.json();
   const { nama, nominalSyahriah } = body;
 
@@ -80,7 +80,7 @@ jenjangRouter.put('/:id', requireRole(['ketua', 'bendahara']), async (c) => {
 // Delete program (Bendahara / Ketua)
 jenjangRouter.delete('/:id', requireRole(['ketua', 'bendahara']), async (c) => {
   const user = c.get('user');
-  const id = c.req.param('id');
+  const id = c.req.param('id') as string;
 
   const db = getDb(c.env.DB);
 
