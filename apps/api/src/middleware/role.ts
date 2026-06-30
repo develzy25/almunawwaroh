@@ -8,7 +8,12 @@ export function requireRole(allowedRoles: ('ketua' | 'sekretariat' | 'bendahara'
       return c.json({ error: 'Unauthorized: Hubungkan session Anda' }, 401);
     }
 
-    if (user.role !== 'ketua' && !allowedRoles.includes(user.role)) {
+    if (user.role === 'ketua') {
+      await next();
+      return;
+    }
+
+    if (!allowedRoles.includes(user.role)) {
       return c.json({ error: 'Forbidden: Hak akses tidak memadai untuk aksi ini' }, 403);
     }
 

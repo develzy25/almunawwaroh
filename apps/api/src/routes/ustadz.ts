@@ -73,8 +73,8 @@ ustadzRouter.get('/:id', async (c) => {
   });
 });
 
-// Add new ustadz (Sekretariat / Bendahara)
-ustadzRouter.post('/', requireRole(['sekretariat', 'bendahara']), async (c) => {
+// Add new ustadz (Sekretariat / Bendahara / Ketua)
+ustadzRouter.post('/', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const body = await c.req.json();
   const db = getDb(c.env.DB);
@@ -109,7 +109,7 @@ ustadzRouter.post('/', requireRole(['sekretariat', 'bendahara']), async (c) => {
 });
 
 // Update ustadz info
-ustadzRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
+ustadzRouter.put('/:id', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const id = c.req.param('id') as string;
   const body = await c.req.json();
@@ -152,7 +152,7 @@ ustadzRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) =>
 });
 
 // Delete ustadz profile
-ustadzRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
+ustadzRouter.delete('/:id', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const id = c.req.param('id') as string;
   const db = getDb(c.env.DB);
@@ -202,7 +202,7 @@ ustadzRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c)
 });
 
 // Manage Jabatan
-ustadzRouter.post('/:id/jabatan', requireRole(['sekretariat', 'bendahara']), async (c) => {
+ustadzRouter.post('/:id/jabatan', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const ustadzId = c.req.param('id') as string;
   const body = await c.req.json();
@@ -223,7 +223,7 @@ ustadzRouter.post('/:id/jabatan', requireRole(['sekretariat', 'bendahara']), asy
   return c.json({ success: true });
 });
 
-ustadzRouter.delete('/:id/jabatan/:jabatanId', requireRole(['sekretariat', 'bendahara']), async (c) => {
+ustadzRouter.delete('/:id/jabatan/:jabatanId', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const jabatanId = c.req.param('jabatanId') as string;
   const db = getDb(c.env.DB);
   

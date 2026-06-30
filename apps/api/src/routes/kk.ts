@@ -64,7 +64,7 @@ kkRouter.get('/:id', async (c) => {
 });
 
 // Create KK (Sekretariat / Bendahara)
-kkRouter.post('/', requireRole(['sekretariat', 'bendahara']), async (c) => {
+kkRouter.post('/', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const body = await c.req.json();
   const { nomorKk, alamat, rt, rw, desa, kecamatan, kabupaten, provinsi, namaAyah, namaIbu, namaWali } = body;
@@ -109,7 +109,7 @@ kkRouter.post('/', requireRole(['sekretariat', 'bendahara']), async (c) => {
 });
 
 // Update KK (Sekretariat / Bendahara)
-kkRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
+kkRouter.put('/:id', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const id = c.req.param('id');
   const body = await c.req.json();
@@ -156,7 +156,7 @@ kkRouter.put('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
 });
 
 // Delete KK (Sekretariat / Bendahara)
-kkRouter.delete('/:id', requireRole(['sekretariat', 'bendahara']), async (c) => {
+kkRouter.delete('/:id', requireRole(['sekretariat', 'bendahara', 'ketua']), async (c) => {
   const user = c.get('user');
   const id = c.req.param('id');
   const db = getDb(c.env.DB);
