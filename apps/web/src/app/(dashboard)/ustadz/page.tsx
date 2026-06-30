@@ -565,8 +565,8 @@ export default function UstadzPage() {
                           <SelectContent className="rounded-xl border-slate-100 shadow-premium">
                             <SelectItem value="TPQ" className="rounded-lg">TPQ</SelectItem>
                             <SelectItem value="RTQ" className="rounded-lg">RTQ</SelectItem>
-                            <SelectItem value="Majlis Ta'lim" className="rounded-lg">Majlis Ta'lim</SelectItem>
-                            <SelectItem value="TPQ & Majlis Ta'lim" className="rounded-lg">TPQ & Majlis Ta'lim</SelectItem>
+                            <SelectItem value="Majlis Ta'lim" className="rounded-lg">Majlis Ta&apos;lim</SelectItem>
+                            <SelectItem value="TPQ & Majlis Ta'lim" className="rounded-lg">TPQ &amp; Majlis Ta&apos;lim</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
