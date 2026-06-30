@@ -565,7 +565,8 @@ export default function UstadzPage() {
                           <SelectContent className="rounded-xl border-slate-100 shadow-premium">
                             <SelectItem value="TPQ" className="rounded-lg">TPQ</SelectItem>
                             <SelectItem value="RTQ" className="rounded-lg">RTQ</SelectItem>
-                            <SelectItem value="TPQ & RTQ" className="rounded-lg">TPQ & RTQ</SelectItem>
+                            <SelectItem value="Majlis Ta'lim" className="rounded-lg">Majlis Ta'lim</SelectItem>
+                            <SelectItem value="TPQ & Majlis Ta'lim" className="rounded-lg">TPQ & Majlis Ta'lim</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -742,6 +743,7 @@ export default function UstadzPage() {
                 <div className="space-y-2 pt-4 border-t border-slate-100">
                   <h3 className="font-semibold text-slate-800">Langkah 2: Upload File Excel</h3>
                   <p className="text-sm text-slate-500">Upload file excel yang sudah Anda isi sesuai template.</p>
+                  <input type="file" ref={fileInputRef} onChange={handleImportExcel} accept=".xlsx, .xls" className="hidden" />
                   <Button 
                     onClick={() => fileInputRef.current?.click()} 
                     disabled={isImporting}
